@@ -1,7 +1,9 @@
+
 import argparse
 
 from dispacher import Dispacher
 from logic_handler import OptionsHandler
+from models import create_connection, get_cursor, generate_salt
 
 parser = argparse.ArgumentParser(description='Program options')
 parser.add_argument('--username', '-u', help='Login - user email', action='store')
@@ -18,21 +20,28 @@ if __name__ == '__main__':
     print(args)
     dispacher = Dispacher()
 
+    salt = generate_salt()
+    connection = create_connection()
+    cursor = get_cursor(connection)
+
     option_handler = OptionsHandler(
         args.password, args.username, args.new_password, args.edit, args.delete, args.list, args.send, args.to
     )
 
     if option_handler.create_user:
-        print('User Created')
+        dispacher.create_user(args.username, args.password, salt, cursor)
     elif option_handler.list_all_users:
-        print('All users list')
+        dispacher.print_all_users(cursor)
     elif option_handler.list_all_messages_for_user:
-        print('All messages for user')
+        dispacher.list_messages(cursor, args.username, args.password)
     elif option_handler.change_password:
-        print('Password Changed!')
+        dispacher.change_password(args.username, args.password, args.new_password, salt, cursor)
     elif option_handler.send_message:
-        print('Message send from user to user with txt')
+        dispacher.send_message(cursor, args.username, args.password, args.send, args.to)
     elif option_handler.delete_user:
-        print('User deleted')
+        dispacher.delete_user(cursor, args.username, args.password)
     else:
         dispacher.not_available_option()
+
+    cursor.close()
+    connection.close()

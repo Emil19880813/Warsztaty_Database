@@ -4,7 +4,7 @@ from psycopg2.extras import RealDictCursor
 from clcrypto import password_hash, check_password, generate_salt
 
 
-def create_conenction(db_name='communications_server'):
+def create_connection(db_name='communications_server'):
     # Otwarcie połączenie do podanej bazy danych.
     db_connection = connect(
         user='postgres',
@@ -72,6 +72,16 @@ class User:
             return None
         return self._create_user_object(row['username'], row['hashed_password'], row['email'], row['id'])
 
+    def get_by_username(self, cursor, username):
+        sql = "SELECT username, hashed_password, email, id FROM Users WHERE username=%s"
+        # Drugi parametr w execute jest to lista gdzie kolejne elementy będą wstawiane w kolejne miejsca %s
+        # Gwarantuje to ochronę przed SQL Injection
+        cursor.execute(sql, (username,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return self._create_user_object(row['username'], row['hashed_password'], row['email'], row['id'])
+
     def save(self, cursor):
         if self._id == -1:
             self._create(cursor)
@@ -87,13 +97,13 @@ class User:
         self._id = cursor.fetchone()['id']
 
     def _update(self, cursor):
-        sql = "UPDATE Users SET email=%s, username=%s, hashed_password=%s WHERE id=%s"
-        values = (self.email, self.username, self._hashed_password, self._id)
+        sql = "UPDATE Users SET email=%s, username=%s, hashed_password=%s WHERE username=%s"
+        values = (self.email, self.username, self._hashed_password, self.username)
         cursor.execute(sql, values)
 
     def delete(self, cursor):
-        sql = "DELETE FROM users WHERE id=%s"
-        cursor.execute(sql, (self._id,))
+        sql = "DELETE FROM users WHERE username=%s"
+        cursor.execute(sql, (self.username,))
 
     def __repr__(self):
         return f'User id: {self._id}, email: {self.email}, username: {self.username}'
@@ -197,9 +207,10 @@ class Message:
 if __name__ == '__main__':
     salt = generate_salt()
 
-    connection = create_conenction()
+    connection = create_connection()
     cursor = get_cursor(connection)
-    a = Message.create_table()
+    Message.create_table()
+    '''
     user1 = User()
     user1.username = 'User1'
     user1.email = 'user1@domain.com'
@@ -217,6 +228,6 @@ if __name__ == '__main__':
     user2.delete(cursor)
     print('Usunięcie', user2)
     print(User().get_all(cursor))
-
+'''
     cursor.close()
     connection.close()

@@ -1,7 +1,7 @@
- from typing import Union, List
+from typing import Union, List
 
 from models import User, Message
-
+from models import create_connection, get_cursor
 
 class WrongParameterError(Exception):
     """Error when wrong params set is given"""
@@ -9,24 +9,68 @@ class WrongParameterError(Exception):
 
 
 class Dispacher:
+
     """HINT: USERNAME == EMAIL """
-    def create_user(self, username: str, password: str) -> User:
-        """Create user to User table"""
+    @staticmethod
+    def create_user(username: str, password: str) -> User:
+        connection = create_connection()
+        cursor = get_cursor(connection)
+        if User.get_by_username(cursor, username) == None:
+            username = username
+            hash_password = User.set_password(password)
+            email = username
+            user = User._create_user_object(username, hash_password, email)
+            user.save(cursor)
+        cursor.close()
+        connection.close()
         raise NotImplementedError
 
-    def login_user(self, username: str, password: str) -> Union[User, None]:
+    @staticmethod
+    def login_user(username: str, hash_password: str) -> Union[User, None]:
+        connection = create_connection()
+        cursor = get_cursor(connection)
+        user = User.get_by_username(cursor, username)
+        cursor.close()
+        connection.close()
+        if user and user.check_password(hash_password):
+            return True
         """Check if user exist in database and return True if password is correct."""
         raise NotImplementedError
 
-    def print_all_users(self) -> List[Union[User, None]]:
+    @staticmethod
+    def print_all_users() -> List[Union[User, None]]:
         """Print all users which are in database"""
-        raise NotImplementedError
+        connection = create_connection()
+        cursor = get_cursor(connection)
+        all_users = User.get_all(cursor)
+        cursor.close()
+        connection.close()
+        if all_users:
+            raise NotImplementedError
+        return all_users
 
-    def change_password(self, user: User, new_password: str) -> None:
+    @staticmethod
+    def change_password(username: User, password: str, new_password: str) -> None:
+        connection = create_connection()
+        cursor = get_cursor(connection)
+        user = User.get_by_username(cursor, username)
+        if user and user.check_password(password):
+            user.set_password(new_password)
+            user.save(cursor)
+            cursor.close()
+            connection.close()
         """Chenge password of given user to new one"""
         raise NotImplementedError
 
-    def delete_user(self, user: User) -> None:
+    @staticmethod
+    def delete_user(username: User, password) -> None:
+        connection = create_connection()
+        cursor = get_cursor(connection)
+        user = User.get_by_username(cursor, username)
+        if user and user.check_password(password):
+            user.delete(cursor)
+            cursor.close()
+            connection.close()
         """Delete given user"""
         raise NotImplementedError
 
