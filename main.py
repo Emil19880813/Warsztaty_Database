@@ -34,7 +34,7 @@ if __name__ == '__main__':
     elif option_handler.list_all_users:
         print(dispacher.print_all_users())
     elif option_handler.list_all_messages_for_user:
-        print(dispacher.list_messages_to_user(args.username, args.password, args.to))
+        print(dispacher.list_messages_to_user(args.username, args.password))
     elif option_handler.change_password:
         print(dispacher.change_password(args.username, args.password, args.new_password))
     elif option_handler.send_message:

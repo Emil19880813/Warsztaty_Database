@@ -131,7 +131,7 @@ class Message:
     @staticmethod
     def create_table():
         sql = f""" CREATE TABLE message 
-              (id int PRIMARY KEY,
+              (id serial PRIMARY KEY,
               from_id int, 
               to_id int, 
               tekst varchar(255),
@@ -158,14 +158,14 @@ class Message:
         return objects
 
     @staticmethod
-    def load_all_messages_for_user(cursor, to_id, from_id):
-        sql = "SELECT * FROM message WHERE to_id = %s and from_id = %s"
-        cursor.execute(sql, (to_id, from_id))
+    def load_all_messages_for_user(cursor, username):
+        sql = "SELECT tekst FROM message, users WHERE users.username = %s"
+        cursor.execute(sql, (username,))
         objects = []
         for row in cursor.fetchall():
             message = Message()
-            message.tekst = row[3]
-            objects.append(message)
+            message.tekst = row['tekst']
+            objects.append(message.tekst)
         return objects
 
     @staticmethod

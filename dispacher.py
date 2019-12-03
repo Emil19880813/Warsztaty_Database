@@ -76,12 +76,12 @@ class Dispacher:
             raise WrongParameterError("Wrong login or password!")
 
     @staticmethod
-    def list_messages_to_user(username, password, to_id) -> List[Union[Message, None]]:
+    def list_messages_to_user(username, password) -> List[Union[Message, None]]:
         connection = create_connection()
         cursor = get_cursor(connection)
         user = User.get_by_username(cursor, username)
         if user and user.check_password(password):
-            messages = Message.load_all_messages_for_user(cursor, to_id, user.id)
+            messages = Message.load_all_messages_for_user(cursor, user.username)
             cursor.close()
             connection.close()
             return messages
@@ -101,7 +101,9 @@ class Dispacher:
             message.to_id = to_id
             message.tekst = text
             message.creation_date = datetime.now()
-            message.save()
+            message.save(cursor)
+            cursor.close()
+            connection.close()
         else:
             raise WrongParameterError("Wrong login or password!")
 
