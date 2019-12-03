@@ -38,31 +38,36 @@ class User:
     def hashed_password(self):
         return self._hashed_password
 
-    def set_password(self, password, salt):
-        self._hashed_password = password_hash(password, salt)
+    # zmienić to na metodę dla instancji
+    #@hashed_password.setter
+    def set_password(self, password):
+        self._hashed_password = password_hash(password)
+        return self._hashed_password
 
     def check_password(self, password_to_check):
         return check_password(password_to_check, self._hashed_password)
 
     @staticmethod
-    def _create_user_object(username, _hashed_password, email, id=-1):
+    def _create_user_object(username, hashed_password, email, id=-1):
         user = User()
         user.username = username
-        user._hashed_password = _hashed_password
+        user._hashed_password = hashed_password
         user.email = email
         user._id = id
         return user
 
-    def get_all(self, cursor):
+    @staticmethod
+    def get_all(cursor):
         sql = "SELECT username, hashed_password, email, id FROM Users"
         cursor.execute(sql)
         objects = []
         for row in cursor.fetchall():
-            user = self._create_user_object(row['username'], row['hashed_password'], row['email'], row['id'])
+            user = User._create_user_object(row['username'], row['hashed_password'], row['email'], row['id'])
             objects.append(user)
         return objects
 
-    def get_by_id(self, cursor, id):
+    @staticmethod
+    def get_by_id(cursor, id):
         sql = "SELECT username, hashed_password, email, id FROM Users WHERE id=%s"
         # Drugi parametr w execute jest to lista gdzie kolejne elementy będą wstawiane w kolejne miejsca %s
         # Gwarantuje to ochronę przed SQL Injection
@@ -70,9 +75,10 @@ class User:
         row = cursor.fetchone()
         if not row:
             return None
-        return self._create_user_object(row['username'], row['hashed_password'], row['email'], row['id'])
+        return User._create_user_object(row['username'], row['hashed_password'], row['email'], row['id'])
 
-    def get_by_username(self, cursor, username):
+    @staticmethod
+    def get_by_username(cursor, username):
         sql = "SELECT username, hashed_password, email, id FROM Users WHERE username=%s"
         # Drugi parametr w execute jest to lista gdzie kolejne elementy będą wstawiane w kolejne miejsca %s
         # Gwarantuje to ochronę przed SQL Injection
@@ -80,7 +86,7 @@ class User:
         row = cursor.fetchone()
         if not row:
             return None
-        return self._create_user_object(row['username'], row['hashed_password'], row['email'], row['id'])
+        return User._create_user_object(row['username'], row['hashed_password'], row['email'], row['id'])
 
     def save(self, cursor):
         if self._id == -1:
@@ -152,16 +158,17 @@ class Message:
         return objects
 
     @staticmethod
-    def load_all_messages_for_user(cursor, id):
-        sql = "SELECT tekst FROM message WHERE to_id = %s"
-        cursor.execute(sql, (id,))
+    def load_all_messages_for_user(cursor, to_id, from_id):
+        sql = "SELECT * FROM message WHERE to_id = %s and from_id = %s"
+        cursor.execute(sql, (to_id, from_id))
         objects = []
         for row in cursor.fetchall():
             message = Message()
-            message.to_id = row[0]
+            message.tekst = row[3]
             objects.append(message)
         return objects
 
+    @staticmethod
     def load_all_messages(cursor):
         sql = "SELECT * FROM message"
         cursor.execute(sql)

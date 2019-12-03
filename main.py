@@ -1,9 +1,10 @@
 
 import argparse
 
+from clcrypto import generate_salt
 from dispacher import Dispacher
 from logic_handler import OptionsHandler
-from models import create_connection, get_cursor, generate_salt
+from models import create_connection, get_cursor
 
 parser = argparse.ArgumentParser(description='Program options')
 parser.add_argument('--username', '-u', help='Login - user email', action='store')
@@ -29,17 +30,17 @@ if __name__ == '__main__':
     )
 
     if option_handler.create_user:
-        dispacher.create_user(args.username, args.password, salt, cursor)
+        print(dispacher.create_user(args.username, args.password))
     elif option_handler.list_all_users:
-        dispacher.print_all_users(cursor)
+        print(dispacher.print_all_users())
     elif option_handler.list_all_messages_for_user:
-        dispacher.list_messages(cursor, args.username, args.password)
+        print(dispacher.list_messages_to_user(args.username, args.password, args.to))
     elif option_handler.change_password:
-        dispacher.change_password(args.username, args.password, args.new_password, salt, cursor)
+        print(dispacher.change_password(args.username, args.password, args.new_password))
     elif option_handler.send_message:
-        dispacher.send_message(cursor, args.username, args.password, args.send, args.to)
+        print(dispacher.send_message(args.username, args.password, args.to, args.send))
     elif option_handler.delete_user:
-        dispacher.delete_user(cursor, args.username, args.password)
+        print(dispacher.delete_user(args.username, args.password))
     else:
         dispacher.not_available_option()
 

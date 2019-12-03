@@ -2,6 +2,7 @@ from typing import Union, List
 
 from models import User, Message
 from models import create_connection, get_cursor
+from datetime import datetime
 
 class WrongParameterError(Exception):
     """Error when wrong params set is given"""
@@ -15,15 +16,13 @@ class Dispacher:
     def create_user(username: str, password: str) -> User:
         connection = create_connection()
         cursor = get_cursor(connection)
-        if User.get_by_username(cursor, username) == None:
-            username = username
-            hash_password = User.set_password(password)
-            email = username
-            user = User._create_user_object(username, hash_password, email)
+        if not User.get_by_username(cursor, username):
+            user = User._create_user_object(username, password, username)
             user.save(cursor)
-        cursor.close()
-        connection.close()
-        raise NotImplementedError
+            cursor.close()
+            connection.close()
+        else:
+            raise WrongParameterError("This user already exist!")
 
     @staticmethod
     def login_user(username: str, hash_password: str) -> Union[User, None]:
@@ -34,8 +33,9 @@ class Dispacher:
         connection.close()
         if user and user.check_password(hash_password):
             return True
-        """Check if user exist in database and return True if password is correct."""
-        raise NotImplementedError
+        else:
+            raise WrongParameterError("Wrong login or password!")
+
 
     @staticmethod
     def print_all_users() -> List[Union[User, None]]:
@@ -46,8 +46,9 @@ class Dispacher:
         cursor.close()
         connection.close()
         if all_users:
-            raise NotImplementedError
-        return all_users
+            return all_users
+        else:
+            raise WrongParameterError("There is no users!")
 
     @staticmethod
     def change_password(username: User, password: str, new_password: str) -> None:
@@ -59,8 +60,8 @@ class Dispacher:
             user.save(cursor)
             cursor.close()
             connection.close()
-        """Chenge password of given user to new one"""
-        raise NotImplementedError
+        else:
+            raise WrongParameterError("Wrong login or password!")
 
     @staticmethod
     def delete_user(username: User, password) -> None:
@@ -71,16 +72,38 @@ class Dispacher:
             user.delete(cursor)
             cursor.close()
             connection.close()
-        """Delete given user"""
-        raise NotImplementedError
+        else:
+            raise WrongParameterError("Wrong login or password!")
 
-    def list_messages_to_user(self, user: User) -> List[Union[Message, None]]:
-        """Return list of all messages in database for specific user"""
-        raise NotImplementedError
+    @staticmethod
+    def list_messages_to_user(username, password, to_id) -> List[Union[Message, None]]:
+        connection = create_connection()
+        cursor = get_cursor(connection)
+        user = User.get_by_username(cursor, username)
+        if user and user.check_password(password):
+            messages = Message.load_all_messages_for_user(cursor, to_id, user.id)
+            cursor.close()
+            connection.close()
+            return messages
+        else:
+            raise WrongParameterError("Wrong login or password!")
 
-    def send_message(self, adress: User, sender: User, message: str) -> Message:
+    @staticmethod
+    def send_message(username, password, to_id, text) -> Message:
         """Create message to adress (User) to sender (User) into database."""
-        raise NotImplementedError
+        connection = create_connection()
+        cursor = get_cursor(connection)
+        user = User.get_by_username(cursor, username)
+        if user and user.check_password(password):
+            message = Message()
+            message._id = -1
+            message.from_id = user.id
+            message.to_id = to_id
+            message.tekst = text
+            message.creation_date = datetime.now()
+            message.save()
+        else:
+            raise WrongParameterError("Wrong login or password!")
 
     def not_available_option(self):
         """No other available option"""
